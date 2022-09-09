@@ -1,71 +1,61 @@
-[![npm version](https://badge.fury.io/js/gitbook-plugin-github-embed.svg)](https://badge.fury.io/js/gitbook-plugin-github-embed)
-[![Build Status](https://travis-ci.org/visallo/gitbook-plugin-github-embed.svg?branch=master)](https://travis-ci.org/visallo/gitbook-plugin-github-embed)
-
 # Embed Github Snippets into Gitbooks
 
-Embed snippet text or whole files from Github repos into a GitBook.
+Just fill in the repository name, class name and function name, this plugin will automatically search the github repository to generate code snippets that call this function。
 
-    {% github_embed "[github url]", [options] %}{% endgithub_embed %}
 
-Where `[github url]` is:
+Using this tag `{% lanying_code_snippet repo="lanying-im-web",class="userManage",function="asyncRegister" %}{% endlanying_code_snippet %}`, it will generate the code snippet as shown below:
+![](demo.png)
 
-    https://github.com/[owner]/[repo]/blob/[ref]/[path]#[line numbers]
+## Prerequisites
+[Joern](https://github.com/joernio/joern) needs to be installed.
 
-Will produce something like this given the URL: https://github.com/v5analytics/gitbook-plugin-github-embed/blob/1cd16ac/index.js#L3-L8
+You can install [Joern](https://github.com/joernio/joern) according to [this document](https://docs.joern.io/installation)
 
-```js
-website: {
-    assets: "./book",
-    css: [
-        "github-embed.css"
-    ]
-},
+## Installation
+Add the following plugins to your book.json and run gitbook install
+
+{
+    "plugins": ["lanying-code-snippet"]
+}
+
+## Usage
+Configuration option can be set as an obj like:
 ```
-[index.js (lines 3–8)](https://github.com/v5analytics/gitbook-plugin-github-embed/blob/master/index.js#L3-L8")
-
-
-## Examples
-    
-    // Load latest version of file "tag.js"   
-    {% github_embed "https://github.com/v5analytics/gitbook-plugin-github-embed/blob/master/src/tag.js" %}{% endgithub_embed %}
-
-    // Load latest version of file "tag.js" and show line 3
-    {% github_embed "https://github.com/v5analytics/gitbook-plugin-github-embed/blob/master/src/tag.js#L3" %}{% endgithub_embed %}
-
-    // Load latest version of file "tag.js" and show lines 1-5   
-    {% github_embed "https://github.com/v5analytics/gitbook-plugin-github-embed/blob/master/src/tag.js#L1-L5" %}{% endgithub_embed %}
-
-    // Load specific version of file "tag.js" and show lines 1-5   
-    // Press "Y" key in github to switch from master/latest to last commit
-    {% github_embed "https://github.com/v5analytics/gitbook-plugin-github-embed/blob/9ef6e532/src/tag.js#L1-L5" %}{% endgithub_embed %}
-
-    // Load full file, but hide interior lines
-    {% github_embed "https://github.com/v5analytics/gitbook-plugin-github-embed/blob/9ef6e532/src/tag.js", hideLines=['15-87'] %}{% endgithub_embed %}
-
-
-## Options
+{
+    "plugins": [
+        "lanying-code-snippet"
+    ],
+    "pluginsConfig": {
+        "lanying-code-snippet": {
+            "showLink": true,
+            "reindent": true,
+            "maxLine": 20,
+            "maxSnippetCount": 10,
+            "repositories": [
+                {
+                    "name":"lanying-im-web",
+                    "url":"https://github.com/maxim-top/lanying-im-web.git",
+                    "branch":"master"
+                },
+                {
+                    "name":"lanying-im-android",
+                    "url":"https://github.com/maxim-top/lanying-im-android.git",
+                    "branch":"master"
+                }
+            ]
+        }
+    }
+}
+```
+## Configuration
 
 * `showLink=true` Show a link below the embedded source back to the source file. Defaults to `true`
-    
-        {% github_embed "[url]", showLink=false %}{% endgithub_embed %}
-
 * `reindent=true` Re-indent the lines given the line numbers. Defaults to `true`
-
-        {% github_embed "[url]", reindent=false, showLink=false %}{% endgithub_embed %}
-        
-* `hideLines=[]` Hide interior lines in a snippet. Should be in ascending order, can contain a range as a string.        
-
-        {% github_embed "[url]", hideLines=[2, '4', '7-10'] %}{% endgithub_embed %}
+* `maxLine=20` maximum number of lines each code snippet. Defaults to `20`
+* `maxSnippetCount=10` Maximum number of code snippets. Defaults to `10`
+* `repositories` repositories are used to configure github repository information: `repositories[*].url` is the url of github repository, `repositories[*].branch` is the branch of github repository, `repositories[*].name` is the name of github repository.
+* Using this tag `{% lanying_code_snippet repo="lanying-im-web",class="userManage",function="asyncRegister" %}{% endlanying_code_snippet %}` to generate the code snippets, the `repo` is the name of github repository, must be one of  `repositories[*].name`, the `class` is the class name, the `function` is the function name.
 
 ## Styling the Link
 
-Use a gitbook style override to adjust the style of the link. The class is [`.github-embed-caption`](https://github.com/v5analytics/gitbook-plugin-github-embed/blob/master/book/github-embed.css).
-
-## Avoiding Rate Limit Errors
-
-Set an environment variable to avoid rate limits. [Create Token](https://github.com/settings/tokens)
-
-    GITBOOK_EMBED_GITHUB_API_TOKEN=[API Token]
-    # or
-    GITBOOK_API_TOKEN=[API Token]
-
+Use a gitbook style override to adjust the style of the link. The class is [`.lanying-code-snippet-caption`](https://github.com/maxim-top/gitbook-plugin-lanying-code-snippet/blob/master/book/lanying-code-snippet.css).

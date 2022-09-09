@@ -3,12 +3,16 @@ module.exports = {
     website: {
         assets: "./book",
         css: [
-            "github-embed.css"
+            "lanying-code-snippet.css"
         ]
     },
     blocks: {
-        github_embed: {
+        lanying_code_snippet: {
             process: require('./src/tag')
         }
+    },
+    hooks: {
+        init: require('./src/init'),
+        "page:before": require('./src/page')
     },
 };

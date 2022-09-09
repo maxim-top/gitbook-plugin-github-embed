@@ -3,7 +3,6 @@ var WHITESPACE = /^[^\S\n]*(?=[\S]+)/mg;
 
 var api = {
     shortest: function(src) {
-        console.log('shortest');
         // Any content line has no prefix whitespace, do nothing
         if (src.match(/^[\S]/mg)) return src;
 
@@ -20,7 +19,6 @@ var api = {
     },
 
     trimmer: function(src) {
-        console.log('trimmer');
         var shortest = api.shortest(src);
 
         if (shortest !== Number.MAX_VALUE && shortest > 0) {
