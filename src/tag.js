@@ -70,6 +70,7 @@ function extractCodeSnippet(options) {
     while(!isFinish){
         deasync.runLoopOnce();
     }
+    child.stdout.removeAllListeners('data')
     return html
 }
 
@@ -102,6 +103,8 @@ function transformCodeSnippet(options, fileName, line,  code, head) {
         if (extension == 'vue'){
             language = 'lang-js'
         } else if (extension == 'cc'){
+            language = 'lang-c'
+        } else if (extension == 'h'){
             language = 'lang-c'
         } else {
             language = 'lang-' + extension

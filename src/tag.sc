@@ -10,7 +10,11 @@ import scala.language.postfixOps
    for (ln <- Source.stdin.getLines) {
       var fields = ln.split(" ")
       if (fields(0) == "ExtractCode") {
-         extractCode(fields(1),fields(2),fields(3),fields(4))
+         try {
+            extractCode(fields(1),fields(2),fields(3),fields(4))
+         }catch{
+            case _: Throwable =>
+         }
          printf("ExtractCodeFinish")
       }
    }
