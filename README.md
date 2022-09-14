@@ -59,3 +59,6 @@ Configuration option can be set as an obj like:
 ## Styling the Link
 
 Use a gitbook style override to adjust the style of the link. The class is [`.lanying-code-snippet-caption`](https://github.com/maxim-top/gitbook-plugin-lanying-code-snippet/blob/master/book/lanying-code-snippet.css).
+
+## FAQ
+* When gitbook install report `Error: spawn E2BIG`, should rerun gitbook install command.
