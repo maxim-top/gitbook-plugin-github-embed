@@ -6,6 +6,7 @@ var exec = require("child_process").execSync
 var repoHeadCache = {}
 var repoCache = {}
 var deasync = require('deasync');
+var resolve = require('path').resolve
 
 module.exports = function processGithubEmbed(block) {
     const pluginOptions = this.config.get('pluginsConfig')['lanying-code-snippet']
@@ -30,8 +31,7 @@ function repoIsExist(options, pluginOptions) {
 function extractCodeSnippet(options) {
     var child = repoCache[options.repo]
     if (!child){
-        var cmd = "joern"
-        child = spawn(cmd, ["--script",`${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/tag.sc`,"--params",`repo=${options.repo}`],{cwd: "/tmp"})
+        child = spawn("joern", ["--script",`${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/tag.sc`,"--params",`repo=${options.repo}`],{cwd: "/tmp"})
         repoCache[options.repo] = child
     }
     var lineDelimiter = "__LANYING_CODE_SNAPPET_LINE_DELIMITER__"
@@ -39,13 +39,27 @@ function extractCodeSnippet(options) {
     var html = ''
     var lineCache = {}
     var isFinish = false
+    var count = 0
 
+    var repoList = options['repositories'] || []
+    var repo =  {}
+    repoList.forEach(nowRepo => {
+        if (nowRepo.name == options.repo){
+            repo = nowRepo
+        }
+    })
+
+    child.on('exit', function(code){
+        isFinish = true
+    })
+    console.log(`processing code snippet: repo=${repo.name} class=${options.class}, function=${options.function}`)
     child.stdin.setEncoding('utf-8');
-    child.stdin.write(`ExtractCode ${options.class} ${options.function} ${options.maxLine || 20} ${options.maxSnippetCount || 5}\r\n`)
+    child.stdin.write(`ExtractCode ${options.class} ${options.function} ${options.maxLine || 20} ${options.maxSnippetCount || 5} ${repo.cacheDir ? resolve(repo.cacheDir) : "no-cache-dir"}\r\n`)
     child.stdout.on('data', data => {
         lines = data.toString().trim().split('\n')
         lines.forEach(line => {
             var fields = line.split(fieldDelimiter)
+            //console.log("Line:", fields)
             if (fields.length == 5 && fields[0] == "CodeSnippet"){
                 var fileName = fields[1]
                 var line = fields[2]
@@ -59,6 +73,7 @@ function extractCodeSnippet(options) {
                     repoHeadCache[options.repo] = head
                 }
                 if (!lineCache[`${fileName}|${line}`]) {
+                    count++
                     html += transformCodeSnippet(options, fileName, line, code, head)
                     lineCache[`${fileName}|${line}`] = true
                 }
@@ -71,6 +86,8 @@ function extractCodeSnippet(options) {
         deasync.runLoopOnce();
     }
     child.stdout.removeAllListeners('data')
+    child.removeAllListeners('exit')
+    console.log(`found ${count} snippets`)
     return html
 }
 
@@ -105,6 +122,8 @@ function transformCodeSnippet(options, fileName, line,  code, head) {
         } else if (extension == 'cc'){
             language = 'lang-c'
         } else if (extension == 'h'){
+            language = 'lang-c'
+        } else if (extension == 'm'){
             language = 'lang-c'
         } else {
             language = 'lang-' + extension

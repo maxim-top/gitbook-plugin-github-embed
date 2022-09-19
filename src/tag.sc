@@ -11,16 +11,17 @@ import scala.language.postfixOps
       var fields = ln.split(" ")
       if (fields(0) == "ExtractCode") {
          try {
-            extractCode(fields(1),fields(2),fields(3),fields(4))
+            extractCode(fields(1),fields(2),fields(3),fields(4), fields(5))
          }catch{
-            case _: Throwable =>
+            case error: Throwable =>
+               println(error)
          }
          printf("ExtractCodeFinish")
       }
    }
 }
 
-def extractCode(className: String, functionName: String, maxLine: String, maxSnippetCount: String) = {
+def extractCode(className: String, functionName: String, maxLine: String, maxSnippetCount: String, cacheDir: String) = {
    var language = cpg.metaData.language.toList(0)
    var snippetCount = 0
    var maxSnippetCountInt = maxSnippetCount.toInt
@@ -68,6 +69,21 @@ def extractCode(className: String, functionName: String, maxLine: String, maxSni
             }
          })
       }
+   } else if (language == "LLVM") { // Objective-C ...
+      var rule = "^%s[:]*$".format(functionName)
+      cpg.call.code(rule).foreach(r => {
+         var filename = r.inAst.isMethod.toList(0).filename
+         var lineNumber = r.lineNumber
+         var repoPath = cacheDir
+         var method = r.inAst.isMethod.toList(0)
+         var lineStart = method.lineNumber
+         var lineEnd = method.lineNumberEnd
+         if (lineNumber.isDefined) {
+            var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
+            snippetCount += 1
+            if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+         }
+      })
    } else { // javascript
       var rule = "[^\\n=]*%s[.:->]*%s[(:]+.*".format(className, functionName)
       cpg.call.code(rule).foreach(r => {
@@ -130,20 +146,25 @@ def printResult(filename: String, lineNumber: Option[Integer], code: String, rep
    if(filename.startsWith(repoPath)){
       relativeFilename = filename.substring(repoPath.length()+1)
    }
-   var lineDelimiter = "__LANYING_CODE_SNAPPET_LINE_DELIMITER__"
-   var fieldDelimiter = "__LANYING_CODE_SNAPPET_FIELD_DELIMITER__"
-   printf("CodeSnippet%s%s%s%d%s%s%s%s\n",
-      fieldDelimiter, relativeFilename,
-      fieldDelimiter, lineNumber.get,
-      fieldDelimiter, code.replaceAll("\n",lineDelimiter),
-      fieldDelimiter, repoPath)
+   if (lineNumber.isDefined){
+      var lineDelimiter = "__LANYING_CODE_SNAPPET_LINE_DELIMITER__"
+      var fieldDelimiter = "__LANYING_CODE_SNAPPET_FIELD_DELIMITER__"
+      printf("CodeSnippet%s%s%s%d%s%s%s%s\n",
+         fieldDelimiter, relativeFilename,
+         fieldDelimiter, lineNumber.get,
+         fieldDelimiter, code.replaceAll("\n",lineDelimiter),
+         fieldDelimiter, repoPath)
+   }
 }
 
 def getFileLines(filename: String, lineStart: Option[Integer], lineEnd: Option[Integer], lineNumber: Option[Integer], maxLine: String): String = {
    var lineNumberInt = lineNumber.get
-   var lineStartInt = lineStart.get
-   var lineEndInt = lineStartInt
+   var lineStartInt = lineNumberInt
+   var lineEndInt = lineNumberInt
    var maxLineInt = maxLine.toInt
+   if (lineStart.isDefined) {
+      lineStartInt = lineStart.get
+   }
    if (lineEnd.isDefined){
       lineEndInt = lineEnd.get
    }
