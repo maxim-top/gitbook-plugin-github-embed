@@ -125,6 +125,8 @@ function transformCodeSnippet(options, fileName, line,  code, head) {
             language = 'lang-c'
         } else if (extension == 'm'){
             language = 'lang-c'
+        } else if (extension == 'mm'){
+            language = 'lang-c'
         } else {
             language = 'lang-' + extension
         }

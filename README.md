@@ -55,10 +55,10 @@ Configuration option can be set as an obj like:
 * `maxLine=20` maximum number of lines each code snippet. Defaults to `20`
 * `maxSnippetCount=10` Maximum number of code snippets. Defaults to `10`
 * `repositories` repositories are used to configure github repository information.
-* `repositories[*].url` is the url of github repository.
-* `repositories[*].branch` is the branch of github repository.
-* `repositories[*].name` is the name of github repository.
-* `repositories[*].cacheDir` is the cache dir of github repository. If not set, a random directory under /tmp will be used。If set, the set directory will be used. if the language is Objective-C, cacheDir must be set.
+  - `repositories[*].url` is the url of github repository.
+  - `repositories[*].branch` is the branch of github repository.
+  - `repositories[*].name` is the name of github repository.
+  - `repositories[*].cacheDir` is the cache dir of github repository. If not set, a random directory under /tmp will be used。If set, the set directory will be used. if the language is Objective-C, cacheDir must be set.
 * Using the tag `{% lanying_code_snippet repo="lanying-im-web",class="userManage",function="asyncRegister" %}{% endlanying_code_snippet %}` to generate the code snippets, the `repo` is the name of github repository, must be one of  `repositories[*].name`, the `class` is the class name, the `function` is the function name.
 
 ## Styling the Link
