@@ -1,4 +1,4 @@
-# Embed Github Snippets into Gitbooks
+# Embed Code Snippets into Gitbooks
 
 Just fill in the repository name, class name and function name, this plugin will automatically search the github repository to generate code snippets that call this function。
 
