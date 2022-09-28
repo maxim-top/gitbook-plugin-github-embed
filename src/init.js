@@ -4,6 +4,7 @@ var repoCache = {}
 var deasync = require('deasync');
 module.exports = function init() {
     const options = this.config.get('pluginsConfig')['lanying-code-snippet']
+    var logger = this.log
     repoList = options['repositories'] || []
     repoList.forEach(
         repo => {
@@ -11,10 +12,10 @@ module.exports = function init() {
                 var isFinish = false
                 var child = spawn("joern", ["--script", `${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/init.sc`, "--params", `name=${repo.name},url=${repo.url},branch=${repo.branch},cacheDir=${repo.cacheDir ? resolve(repo.cacheDir) : ""}`], {cwd: "/tmp"})
                 child.stdout.on('data', data => {
-                    console.log(data.toString().replace(/\n+$/, ""))
+                    logger.debug.ln(data.toString().replace(/\n+$/, ""))
                 })
                 child.stderr.on('data', data => {
-                    console.log(data.toString().replace(/\n+$/, ""))
+                    logger.debug.ln(data.toString().replace(/\n+$/, ""))
                 })
                 child.on('exit', function () {
                     isFinish = true
@@ -23,7 +24,7 @@ module.exports = function init() {
                 while(!isFinish){
                     deasync.runLoopOnce();
                 }
-                console.log("init finish:", repo.name)
+                logger.info.ln("init finish:", repo.name)
             }
         }
     )

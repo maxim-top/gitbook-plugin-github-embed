@@ -12,7 +12,7 @@ import scala.util.control.Breaks._
       var fields = ln.split(" ")
       if (fields(0) == "ExtractCode") {
          try {
-            extractCode(fields(1),fields(2),fields(3),fields(4), fields(5))
+            extractCode(fields(1),fields(2),fields(3),fields(4), fields(5), fields(6))
          }catch{
             case error: Throwable =>
                println(error)
@@ -22,61 +22,13 @@ import scala.util.control.Breaks._
    }
 }
 
-def extractCode(className: String, functionName: String, maxLine: String, maxSnippetCount: String, cacheDir: String) = {
+def extractCode(className: String, functionName: String, maxLine: String, maxSnippetCount: String, cacheDir: String, filter: String) = {
    var language = cpg.metaData.language.toList(0)
    var snippetCount = 0
    var maxSnippetCountInt = maxSnippetCount.toInt
    if (language ==  "JAVASRC") {
-      var rule = ".*%s[.:->]*%s[(:]+.*".format(className, functionName)
-      cpg.call.methodFullName(rule).foreach(r => {
-         var filename = r.inAst.isMethod.toList(0).filename
-         var lineNumber = r.lineNumber
-         var repoPath = project.projectFile.inputPath
-         var method = r.inAst.isMethod.toList(0)
-         var lineStart = method.lineNumber
-         var lineEnd = method.lineNumberEnd
-         var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
-         snippetCount += 1
-         if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-      })
-      var methodRule = ".*%s\\.<init>.*".format(className)
-      var codeRule = "new .*%s.*\\{.*%s.*".format(className, functionName)
-      cpg.call.methodFullName(methodRule).code(codeRule).foreach(r => {
-         var filename = r.inAst.isMethod.toList(0).filename
-         var blockLineNumber = r.lineNumber
-         var repoPath = project.projectFile.inputPath
-         var codeLineCount = r.code.count(_ == '\n') + 1
-         var blockCode = getFileLines(filename, blockLineNumber, Some(blockLineNumber.get + codeLineCount + 100), blockLineNumber, "100000000")
-         var (code, lineNumber) = getFunctionCode(functionName, blockCode, blockLineNumber, maxLine)
-         if (code != "") {
-            snippetCount += 1
-            if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-         }
-      })
-      var childClassRule = ".*%s$".format(className)
-      cpg.typeDecl.filter(_.inheritsFromTypeFullName.filter(_.matches(childClassRule)).size > 0).ast.isMethod.name(functionName).foreach(
-         r => {
-            var filename = r.filename
-            var lineNumber = r.lineNumber
-            if (lineNumber.isDefined){
-               lineNumber = Some(lineNumber.get + 1)
-            }
-            var lineStart = lineNumber
-            var lineEnd = r.lineNumberEnd
-            if (lineEnd.isDefined){
-               lineEnd = Some(lineEnd.get + 1)
-            }
-            var repoPath = project.projectFile.inputPath
-            var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
-            if (code != "") {
-               snippetCount += 1
-               if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-            }
-         }
-      )
-   } else if (language == "NEWC") {
-      if (className == ""){//C++ global function
-         var rule = "^%s$".format(functionName)
+      if (isShowCode("call", filter)) {
+         var rule = ".*%s[.:->]*%s[(:]+.*".format(className, functionName)
          cpg.call.methodFullName(rule).foreach(r => {
             var filename = r.inAst.isMethod.toList(0).filename
             var lineNumber = r.lineNumber
@@ -88,59 +40,142 @@ def extractCode(className: String, functionName: String, maxLine: String, maxSni
             snippetCount += 1
             if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
          })
-      } else {//C++ function with class
-         var rule = ".*[.:->]+%s$".format(functionName)
-         cpg.call.methodFullName(rule).foreach(r => {
-            var myClassName = findClass(r.astChildren.toList(0).astChildren.toList(0))
-            if (myClassName == className || myClassName == "ANY") {
+      }
+      if (isShowCode("override", filter)){
+         var methodRule = ".*%s\\.<init>.*".format(className)
+         var codeRule = "new .*%s.*\\{.*%s.*".format(className, functionName)
+         cpg.call.methodFullName(methodRule).code(codeRule).foreach(r => {
+            var filename = r.inAst.isMethod.toList(0).filename
+            var blockLineNumber = r.lineNumber
+            var repoPath = project.projectFile.inputPath
+            var codeLineCount = r.code.count(_ == '\n') + 1
+            var blockCode = getFileLines(filename, blockLineNumber, Some(blockLineNumber.get + codeLineCount + 100), blockLineNumber, "100000000")
+            var (code, lineNumber) = getFunctionCode(functionName, blockCode, blockLineNumber, maxLine)
+            if (code != "") {
+               snippetCount += 1
+               if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+            }
+         })
+         var childClassRule = ".*%s$".format(className)
+         cpg.typeDecl.filter(_.inheritsFromTypeFullName.filter(_.matches(childClassRule)).size > 0).ast.isMethod.name(functionName).foreach(
+            r => {
+               var filename = r.filename
+               var lineNumber = r.lineNumber
+               if (lineNumber.isDefined){
+                  lineNumber = Some(lineNumber.get + 1)
+               }
+               var lineStart = lineNumber
+               var lineEnd = r.lineNumberEnd
+               if (lineEnd.isDefined){
+                  lineEnd = Some(lineEnd.get + 1)
+               }
+               var repoPath = project.projectFile.inputPath
+               var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
+               if (code != "") {
+                  snippetCount += 1
+                  if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+               }
+            }
+         )
+      }
+   } else if (language == "NEWC") {
+      if (className == ""){//C++ global function
+         if (isShowCode("call", filter)) {
+            var rule = "^%s$".format(functionName)
+            cpg.call.methodFullName(rule).foreach(r => {
                var filename = r.inAst.isMethod.toList(0).filename
                var lineNumber = r.lineNumber
                var repoPath = project.projectFile.inputPath
                var method = r.inAst.isMethod.toList(0)
-               var lineStart = lineNumber
-               var lineEnd = None
+               var lineStart = method.lineNumber
+               var lineEnd = method.lineNumberEnd
+               var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
+               snippetCount += 1
+               if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+            })
+         }
+      } else {//C++ function with class
+         if (isShowCode("call", filter)) {
+            var rule = ".*[.:->]+%s$".format(functionName)
+            cpg.call.methodFullName(rule).foreach(r => {
+               var myClassName = findClass(r.astChildren.toList(0).astChildren.toList(0))
+               if (myClassName == className || myClassName == "ANY") {
+                  var filename = r.inAst.isMethod.toList(0).filename
+                  var lineNumber = r.lineNumber
+                  var repoPath = project.projectFile.inputPath
+                  var method = r.inAst.isMethod.toList(0)
+                  var lineStart = lineNumber
+                  var lineEnd = None
+                  var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
+                  snippetCount += 1
+                  if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+               }
+            })
+         }
+         if (isShowCode("override", filter)) {
+            var functionRule = ".*%s$".format(functionName)
+            cpg.method.fullName(functionRule).filenameNot(".*\\.h$").foreach(r => {
+               var fullName = r.fullName
+               if (fullName.length() > functionName.length()+1){
+                  var nowClassName = fullName.substring(0, fullName.length() - functionName.length() - 1)
+                  printf("nowClassName:%s\n", nowClassName)
+                  if (isSubClass(nowClassName, className)){
+                     var filename = r.filename
+                     var lineNumber = r.lineNumber
+                     var lineStart = lineNumber
+                     var lineEnd = r.lineNumberEnd
+                     var repoPath = project.projectFile.inputPath
+                     var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
+                     snippetCount += 1
+                     if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+                  }
+               }
+            })
+         }
+      }
+   } else if (language == "LLVM") { // Objective-C ...
+      if (isShowCode("call", filter)) {
+         var rule = "^%s[:]*$".format(functionName)
+         cpg.call.code(rule).foreach(r => {
+            var filename = r.inAst.isMethod.toList(0).filename
+            var lineNumber = r.lineNumber
+            var repoPath = cacheDir
+            var method = r.inAst.isMethod.toList(0)
+            var lineStart = method.lineNumber
+            var lineEnd = method.lineNumberEnd
+            if (lineNumber.isDefined) {
                var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
                snippetCount += 1
                if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
             }
          })
       }
-   } else if (language == "LLVM") { // Objective-C ...
-      var rule = "^%s[:]*$".format(functionName)
-      cpg.call.code(rule).foreach(r => {
-         var filename = r.inAst.isMethod.toList(0).filename
-         var lineNumber = r.lineNumber
-         var repoPath = cacheDir
-         var method = r.inAst.isMethod.toList(0)
-         var lineStart = method.lineNumber
-         var lineEnd = method.lineNumberEnd
-         if (lineNumber.isDefined) {
-            var code = getFileLines(filename, lineStart, lineEnd, lineNumber, maxLine)
-            snippetCount += 1
-            if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-         }
-      })
-      cpg.method.name(rule).foreach(r => {
-         var filename = r.filename
-         var lineNumber = r.lineNumber
-         var repoPath = cacheDir
-         if (lineNumber.isDefined) {
-            var code = getFunctionCodeByLine(filename, lineNumber, maxLine)
-            snippetCount += 1
-            if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-         }
-      })
+      if (isShowCode("override", filter)) {
+         var rule = "^%s[:]*$".format(functionName)
+         cpg.method.name(rule).foreach(r => {
+            var filename = r.filename
+            var lineNumber = r.lineNumber
+            var repoPath = cacheDir
+            if (lineNumber.isDefined) {
+               var code = getFunctionCodeByLine(filename, lineNumber, maxLine)
+               snippetCount += 1
+               if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+            }
+         })
+      }
    } else { // javascript
-      var rule = "[^\\n=]*%s[.:->]*%s[(:]+.*".format(className, functionName)
-      cpg.call.code(rule).foreach(r => {
-          var filename = r.inAst.isMethod.toList(0).filename
-          var lineNumber = r.lineNumber
-          var repoPath = project.projectFile.inputPath
-          var code = r.inAst.isBlock.toList(0).code
-          //var startLineNumber = r.inAst.isBlock.toList(0).lineNumber.get
-         snippetCount += 1
-         if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
-      })
+      if (isShowCode("call", filter)) {
+         var rule = "[^\\n=]*%s[.:->]*%s[(:]+.*".format(className, functionName)
+         cpg.call.code(rule).foreach(r => {
+            var filename = r.inAst.isMethod.toList(0).filename
+            var lineNumber = r.lineNumber
+            var repoPath = project.projectFile.inputPath
+            var code = r.inAst.isBlock.toList(0).code
+            //var startLineNumber = r.inAst.isBlock.toList(0).lineNumber.get
+            snippetCount += 1
+            if (snippetCount <= maxSnippetCountInt) printResult(filename, lineNumber, code, repoPath)
+         })
+      }
    }
 }
 
@@ -282,4 +317,13 @@ def getFunctionCode(functionName: String, blockCode: String, blockLineNumber: Op
       }
    })
    return (code, Some(lineNumber))
+}
+
+def isSubClass(className: String, parentClassName: String) : Boolean = {
+   printf("IsSubClass: %s => %s\n", className, parentClassName)
+   return cpg.typeDecl.filter(_.inheritsFromTypeFullName.filter(_.matches(".*%s.*".format(parentClassName))).size > 0).name.filter(_.matches(className)).size > 0
+}
+
+def isShowCode(what: String, filter: String) : Boolean = {
+   return filter.contains(what)
 }

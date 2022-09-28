@@ -58,6 +58,7 @@ Configuration option can be set as an obj like:
   - `repositories[*].url` is the url of github repository.
   - `repositories[*].branch` is the branch of github repository.
   - `repositories[*].name` is the name of github repository.
+  - `repositories[*].filter` is used to filter which code to show. "call" -  show code which call this function; "override" - show code which override this function. Defaults to "call|override", which will show calls and overrides.
   - `repositories[*].cacheDir` is the cache dir of github repository. If not set, a random directory under /tmp will be used。If set, the set directory will be used. if the language is Objective-C, cacheDir must be set.
 * Using the tag `{% lanying_code_snippet repo="lanying-im-web",class="userManage",function="asyncRegister" %}{% endlanying_code_snippet %}` to generate the code snippets, the `repo` is the name of github repository, must be one of  `repositories[*].name`, the `class` is the class name, the `function` is the function name.
 
@@ -69,7 +70,7 @@ Use a gitbook style override to adjust the style of the link. The class is [`.la
 If the code is write in Objective-C language, Xcode version less than 12 is needed. [llvm2cpg](https://github.com/ShiftLeftSecurity/llvm2cpg) is also needed.
 Must ensure the following command must execute successfully in the repo cache dir.
 ```
-xcodebuild OTHER_CFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' OTHER_CPLUSPLUSFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' OTHER_LDFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' clean build && llvm2cpg `find . -name '*.o'`
+xcodebuild OTHER_CFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' OTHER_CPLUSPLUSFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' OTHER_LDFLAGS='-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin' clean build -quiet && llvm2cpg `find . -name '*.o'`
 ```
 ## FAQ
 * When gitbook install report `Error: spawn E2BIG`, should rerun gitbook install command.

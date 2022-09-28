@@ -9,10 +9,12 @@ var deasync = require('deasync');
 var resolve = require('path').resolve
 
 module.exports = function processGithubEmbed(block) {
+    var logger = this.log
     const pluginOptions = this.config.get('pluginsConfig')['lanying-code-snippet']
     var options = block.kwargs || {}
+    options.logger = logger
     if(!repoIsExist(options, pluginOptions)){
-        console.log(`repo ${options.repo} not found, so skip.`)
+        logger.warn.ln(`repo ${options.repo} not found, so skip.`)
         return "";
     }
     return extractCodeSnippet({...pluginOptions, ...options})
@@ -29,6 +31,7 @@ function repoIsExist(options, pluginOptions) {
     return hasRepo
 }
 function extractCodeSnippet(options) {
+    var logger = options.logger
     var child = repoCache[options.repo]
     if (!child){
         child = spawn("joern", ["--script",`${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/tag.sc`,"--params",`repo=${options.repo}`],{cwd: "/tmp"})
@@ -41,6 +44,10 @@ function extractCodeSnippet(options) {
     var isFinish = false
     var count = 0
 
+    child.on('exit', function(code){
+        isFinish = true
+    })
+
     var repoList = options['repositories'] || []
     var repo =  {}
     repoList.forEach(nowRepo => {
@@ -48,13 +55,11 @@ function extractCodeSnippet(options) {
             repo = nowRepo
         }
     })
+    var filter = options.filter || repo.filter || "call|override"
 
-    child.on('exit', function(code){
-        isFinish = true
-    })
-    console.log(`processing code snippet: repo=${repo.name} class=${options.class}, function=${options.function}`)
+    logger.debug.ln(`processing code snippet: repo=${repo.name} class=${options.class}, function=${options.function}`)
     child.stdin.setEncoding('utf-8');
-    child.stdin.write(`ExtractCode ${options.class} ${options.function} ${options.maxLine || 20} ${options.maxSnippetCount || 5} ${repo.cacheDir ? resolve(repo.cacheDir) : "no-cache-dir"}\r\n`)
+    child.stdin.write(`ExtractCode ${options.class} ${options.function} ${options.maxLine || 20} ${options.maxSnippetCount || 5} ${repo.cacheDir ? resolve(repo.cacheDir) : "no-cache-dir"} ${filter}\r\n`)
     child.stdout.on('data', data => {
         lines = data.toString().trim().split('\n')
         lines.forEach(line => {
@@ -87,7 +92,7 @@ function extractCodeSnippet(options) {
     }
     child.stdout.removeAllListeners('data')
     child.removeAllListeners('exit')
-    console.log(`found ${count} snippets`)
+    logger.debug.ln(`found ${count} snippets`)
     return html
 }
 

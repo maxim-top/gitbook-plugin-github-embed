@@ -26,7 +26,7 @@ import scala.language.postfixOps
          var dir = "/tmp/%s-%d".format(name, System.currentTimeMillis())
          var cpgFile = dir + "/cpg.bin.zip"
          var flags = "-fembed-bitcode -grecord-command-line -fno-inline-functions -fno-builtin"
-         var cmd2 = "bash -c \"cd %s && xcodebuild OTHER_CFLAGS='%s' OTHER_CPLUSPLUSFLAGS='%s' OTHER_LDFLAGS='%s' clean build 1>/dev/null ; mkdir -p %s && llvm2cpg `find . -name '*.o'` --output=%s 1>/dev/null\"".format(projectDir, flags, flags, flags, dir, cpgFile)
+         var cmd2 = "bash -c \"cd %s && xcodebuild OTHER_CFLAGS='%s' OTHER_CPLUSPLUSFLAGS='%s' OTHER_LDFLAGS='%s' clean build -quiet 1>/dev/null ; mkdir -p %s && llvm2cpg `find . -name '*.o'` --output=%s 1>/dev/null\"".format(projectDir, flags, flags, flags, dir, cpgFile)
          exec(cmd2)
          importCpg(inputPath=cpgFile,projectName=name)
       } else {
