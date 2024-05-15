@@ -10,7 +10,7 @@
     "url": "https://github.com/maxim-top/gitbook-plugin-lanying-code-snippet.git"
   },
   "main": "./index.js",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "keywords": [
     "gitbook",
     "gitbook-plugin",
