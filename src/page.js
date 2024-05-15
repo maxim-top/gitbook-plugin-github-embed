@@ -4,5 +4,5 @@ module.exports = function processPage(page) {
 }
 
 function maybeMoveCodeSnippet(content) {
-    return content.replaceAll(/```[^\r\n]*[\r\n]*({% lanying_code_snippet[^\r\n]*endlanying_code_snippet %})([ \r\n]*)```/g, '\n$1\n').replaceAll(/({% lanying_code_snippet[^\r\n]*endlanying_code_snippet %})([ \r\n]*)```/g, '$2```\n\n$1\n')
+    return content.replace(/```[^\r\n]*[\r\n]*({% lanying_code_snippet[^\r\n]*endlanying_code_snippet %})([ \r\n]*)```/g, (match, group1, group2) => `\n${group1}\n`).replace(/({% lanying_code_snippet[^\r\n]*endlanying_code_snippet %})([ \r\n]*)```/g, (match, group1, group2) => `${group2}\`\`\`\n\n${group1}\n`);
 }

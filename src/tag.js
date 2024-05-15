@@ -68,7 +68,7 @@ function extractCodeSnippet(options) {
             if (fields.length == 5 && fields[0] == "CodeSnippet"){
                 var fileName = fields[1]
                 var line = fields[2]
-                var code = fields[3].replaceAll(lineDelimiter, '\n').replace(/^({)/, '').replace(/^(\n)/, '').replace(/(})$/, '')
+                var code = fields[3].replace(new RegExp(lineDelimiter, 'g'), '\n').replace(/^({)/, '').replace(/^(\n)/, '').replace(/(})$/, '');
                 var repoPath = fields[4]
                 var head = repoHeadCache[options.repo]
                 if (!head) {
@@ -110,9 +110,9 @@ function transformCodeSnippet(options, fileName, line,  code, head) {
 
     var url = ''
     if (repoUrl.startsWith("git@")) {
-        url = repoUrl.replaceAll(':', '/').replaceAll('git@', 'https://').replaceAll('.git', '')
+        url = repoUrl.replace(/:/g, '/').replace('git@', 'https://').replace(/\.git/g, '');
     } else {
-        url = repoUrl.replaceAll('.git', '')
+        url = repoUrl.replace(/\.git/g, '');
     }
     url = `${url}/blob/${head}/${fileName}#L${line}`
 
