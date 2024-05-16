@@ -34,7 +34,7 @@ function extractCodeSnippet(options) {
     var logger = options.logger
     var child = repoCache[options.repo]
     if (!child){
-        child = spawn("joern", ["--script",`${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/tag.sc`,"--param",`repo=${options.repo}`],{cwd: "/tmp"})
+        child = spawn("joern", ["--script",`${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/tag.sc`,"--params",`repo=${options.repo}`],{cwd: "/tmp"})
         repoCache[options.repo] = child
     }
     var lineDelimiter = "__LANYING_CODE_SNAPPET_LINE_DELIMITER__"

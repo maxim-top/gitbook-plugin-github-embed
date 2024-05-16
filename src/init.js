@@ -10,11 +10,7 @@ module.exports = function init() {
         repo => {
             if (!repoCache[repo.name]){
                 var isFinish = false
-                var child = spawn("joern", ["--script", `${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/init.sc`,
-                "--param", `name=${repo.name}`,
-                "--param", `url=${repo.url}`,
-                "--param", `branch=${repo.branch}`,
-                "--param", `cacheDir=${repo.cacheDir ? resolve(repo.cacheDir) : ""}`], {cwd: "/tmp"})
+                var child = spawn("joern", ["--script", `${process.cwd()}/node_modules/gitbook-plugin-lanying-code-snippet/src/init.sc`, "--params", `name=${repo.name},url=${repo.url},branch=${repo.branch},cacheDir=${repo.cacheDir ? resolve(repo.cacheDir) : ""}`], {cwd: "/tmp"})
                 child.stdout.on('data', data => {
                     logger.debug.ln(data.toString().replace(/\n+$/, ""))
                 })
